@@ -55,6 +55,16 @@ upstream {{ $host }} {
 }
 
 server {
+    {{ range $ssl, $containers := groupByMulti $ "Env.VIRTUAL_SSL" "," }}
+      {{ $sslLen := len $ssl }}
+      {{ if eq $sslLen 1 }}
+        listen 443 ssl;
+    
+        ssl_certificate /etc/nginx/certs/{{$ssl}}.crt;
+        ssl_certificate_key /etc/nginx/certs/{{$ssl}}.key;
+      {{ end }}
+    {{ end }}
+    
 	gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
 
 	server_name {{ $host }};
