@@ -22,13 +22,13 @@ server {
 
 {{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
 
-upstream internal.{{ $host }} {
 {{ range $index, $value := $containers }}
+upstream {{ $value.Name }} {
 	{{ $addrLen := len $value.Addresses }}
 	{{/* If only 1 port exposed, use that */}}
 	{{ if eq $addrLen 1 }}
 		{{ with $address := index $value.Addresses 0 }}
-		   # {{$value.Name}}
+		   # {{ $value.Name }}
 		   server {{ $address.IP }}:{{ $address.Port }};
 		{{ end }}
 
@@ -36,7 +36,7 @@ upstream internal.{{ $host }} {
 	{{ else if $value.Env.VIRTUAL_PORT }}
 		{{ range $i, $address := $value.Addresses }}
 		   {{ if eq $address.Port $value.Env.VIRTUAL_PORT }}
-		   # {{$value.Name}}
+		   # {{ $value.Name }}
 		   server {{ $address.IP }}:{{ $address.Port }};
 		   {{ end }}
 		{{ end }}
@@ -45,13 +45,13 @@ upstream internal.{{ $host }} {
 	{{ else }}
 		{{ range $i, $address := $value.Addresses }}
 			{{ if eq $address.Port "80" }}
-			# {{$value.Name}}
+			# {{ $value.Name }}
 			server {{ $address.IP }}:{{ $address.Port }};
 			{{ end }}
 		{{ end }}
 	{{ end }}
-{{ end }}
 }
+{{ end }}
 
 server {
     {{ range $ssl, $containers := groupByMulti $ "Env.VIRTUAL_SSL" "," }}
@@ -76,7 +76,7 @@ server {
       {{ range $i, $v := $containers }}
         {{ if eq $v.Env.VIRTUAL_HOST $host }}
           location {{ $v.Env.VIRTUAL_PATH }} {
-            proxy_pass http://internal.{{ $host }};
+            proxy_pass http://{{ $v.Name }};
             proxy_set_header Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
